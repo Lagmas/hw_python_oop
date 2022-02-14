@@ -117,6 +117,7 @@ class Swimming(Training):
         return ((self.get_mean_speed() + self.coeff_calorie_1)
                 * self.coeff_calorie_2 * self.weight)
 
+
 def read_package(workout_type: str, data: list) -> Training:
     """Прочитать данные полученные от датчиков."""
     workout_options = {
