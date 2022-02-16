@@ -1,8 +1,8 @@
 from dataclasses import dataclass
-from typing import Type, Union, List, Dict
+from typing import Type, List, Dict, ClassVar
 
 
-@dataclass
+@dataclass(repr=False, eq=False)
 class InfoMessage:
     """Информационное сообщение о тренировке."""
     training_type: str
@@ -11,21 +11,21 @@ class InfoMessage:
     speed: float
     calories: float
 
-    def get_message(self):
-        result: Union[str, float] = (f'Тип тренировки: {self.training_type}; '
-                                     f'Длительность: {self.duration:.3f} ч.; '
-                                     f'Дистанция: {self.distance:.3f} км; '
-                                     f'Ср. скорость: {self.speed:.3f} км/ч; '
-                                     f'Потрачено ккал: {self.calories:.3f}.')
+    def get_message(self) -> str:
+        result: str = (f'Тип тренировки: {self.training_type}; '
+                       f'Длительность: {self.duration:.3f} ч.; '
+                       f'Дистанция: {self.distance:.3f} км; '
+                       f'Ср. скорость: {self.speed:.3f} км/ч; '
+                       f'Потрачено ккал: {self.calories:.3f}.')
         return result
 
 
-@dataclass
+@dataclass(repr=False, eq=False)
 class Training:
     """Базовый класс тренировки."""
-    LEN_STEP = 0.65
-    M_IN_KM = 1000
-    MINS = 60
+    LEN_STEP: ClassVar[float] = 0.65
+    M_IN_KM: ClassVar[float] = 1000.
+    MINS: ClassVar[float] = 60.
 
     action: int
     duration: float
@@ -43,7 +43,9 @@ class Training:
 
     def get_spent_calories(self) -> float:
         """Получить количество затраченных калорий."""
-        pass
+        raise NotImplementedError('get_spent_calories() не определен'
+                                  ' в классах наследниках: Running,'
+                                  ' SportsWalking, Swimming')
 
     def show_training_info(self) -> InfoMessage:
         """Вернуть информационное сообщение о выполненной тренировке."""
@@ -55,38 +57,39 @@ class Training:
         return obj_InfoMessage
 
 
-@dataclass
+@dataclass(repr=False, eq=False)
 class Running(Training):
     """Тренировка: бег."""
-    COEFF_KCAL_RUN_1 = 18
-    COEFF_KCAL_RUN_2 = 20
+    CALORIES_SPEED_MULTIPLIER: ClassVar[float] = 18
+    CALORIES_SPEED_SUBTRACTION: ClassVar[float] = 20
 
     def get_spent_calories(self):
-        return ((self.COEFF_KCAL_RUN_1 * self.get_mean_speed()
-                - self.COEFF_KCAL_RUN_2) * self.weight
+        return ((self.CALORIES_SPEED_MULTIPLIER * self.get_mean_speed()
+                - self.CALORIES_SPEED_SUBTRACTION) * self.weight
                 / self.M_IN_KM * self.duration * self.MINS)
 
 
-@dataclass
+@dataclass(repr=False, eq=False)
 class SportsWalking(Training):
     """Тренировка: спортивная ходьба."""
-    COEFF_KCAL_WALK_1 = 0.035
-    COEFF_KCAL_WALK_2 = 0.029
+    CALORIES_WEIGHT_MULTIPLIER: ClassVar[float] = 0.035
+    CALORIES_WEIGHT_GENERATION: ClassVar[float] = 0.029
 
     height: float
 
     def get_spent_calories(self):
-        return ((self.COEFF_KCAL_WALK_1 * self.weight + (self.get_mean_speed()
-                ** 2 // self.height) * self.COEFF_KCAL_WALK_2 * self.weight)
+        return ((self.CALORIES_WEIGHT_MULTIPLIER * self.weight
+                + (self.get_mean_speed() ** 2 // self.height)
+                * self.CALORIES_WEIGHT_GENERATION * self.weight)
                 * self.duration * self.MINS)
 
 
-@dataclass
+@dataclass(repr=False, eq=False)
 class Swimming(Training):
     """Тренировка: плавание."""
-    LEN_STEP = 1.38
-    COEFF_KCAL_SWIM_1 = 1.1
-    COEFF_KCAL_SWIM_2 = 2
+    LEN_STEP: ClassVar[float] = 1.38
+    CALORIES_SPEED_ADDITION: ClassVar[float] = 1.1
+    CALORIES_SPEED_MULTIPLIER: ClassVar[float] = 2.
 
     length_pool: int
     count_pool: int
@@ -96,8 +99,8 @@ class Swimming(Training):
                 / self.duration)
 
     def get_spent_calories(self):
-        return ((self.get_mean_speed() + self.COEFF_KCAL_SWIM_1)
-                * self.COEFF_KCAL_SWIM_2 * self.weight)
+        return ((self.get_mean_speed() + self.CALORIES_SPEED_ADDITION)
+                * self.CALORIES_SPEED_MULTIPLIER * self.weight)
 
 
 def read_package(workout_type: str, data: List) -> Training:
